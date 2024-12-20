@@ -14,6 +14,8 @@ provider "aws" {
   region = "us-east-1"
   assume_role {
    role_arn = "arn:aws:iam::982534389470:role/terraform"
+   session_name = "jenkins"
+   
   }
 }
 
