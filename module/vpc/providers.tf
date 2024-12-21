@@ -16,6 +16,6 @@ provider "aws" {
    #role_arn = "arn:aws:iam::982534389470:role/terraform"
    #session_name = "terraform-session"
    
-  }
+  
 }
 
