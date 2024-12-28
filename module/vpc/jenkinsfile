@@ -1,0 +1,57 @@
+properties([
+    parameters([
+        string(defaultValue: 'vpc', name: 'File_Name', description: 'Select or specify the file name'),
+        string(defaultValue: 'terraform', name: 'Pipeline', description: 'Specify the pipeline name'),
+        choice(name: 'Terraform_Action', choices: ['plan', 'apply', 'destroy'], description: 'Select one')
+    ])
+])
+pipeline {
+    agent any
+    stages {
+        stage('Preparing') {
+            steps {
+                sh 'echo Preparing'
+            }
+        }
+        stage('Git Pull') {
+            steps {
+                git branch: 'main', url: 'https://github.com/Tejaswi53/terraform.git'
+                sh 'ls'
+            }
+        }
+        stage('Init') {
+            steps {
+                
+                    sh 'terraform -chdir=/var/lib/jenkins/workspace/${Pipeline}/module/${File_Name}/ init --lock=false'
+            }
+        }
+        stage('Action') {
+            steps {
+                
+                    script {
+                        if (params.Terraform_Action == 'plan') {
+                            sh 'terraform -chdir=/var/lib/jenkins/workspace/${Pipeline}/module/${File_Name}/  plan --lock=false'
+                        } else if (params.Terraform_Action == 'apply') {
+                            def confirmApply = input message: 'Are you sure you want to apply the Terraform changes? Type "Yes" to confirm or "No" to abort.', parameters: [string(name: 'Confirm Apply', defaultValue: '', description: 'Type "Yes" to confirm or "No" to abort')]
+                            if (confirmApply == 'Yes') {
+                                sh 'terraform -chdir=/var/lib/jenkins/workspace/${Pipeline}/module/${File_Name}/ apply --lock=false -auto-approve'
+                            } else {
+                                echo 'Apply action aborted by user.'
+                            }
+                        } else if (params.Terraform_Action == 'destroy') {
+                            def confirmDestroy = input message: 'Are you sure you want to destroy the resources? Type "Yes" to confirm or "No" to abort.', parameters: [string(name: 'Confirm Destroy', defaultValue: '', description: 'Type "Yes" to confirm or "No" to abort')]
+                            if (confirmDestroy == 'Yes') {
+                                sh 'terraform -chdir=/var/lib/jenkins/workspace/${Pipeline}/module/${File_Name}/ destroy --lock=false -auto-approve'
+                            } else {
+                                echo 'Destroy action aborted by user.'
+                            }
+                        } else {
+                            error "Invalid value for Terraform_Action: ${params.Terraform_Action}"
+                        }
+                    }
+            }
+                
+        }
+        
+    }
+}
